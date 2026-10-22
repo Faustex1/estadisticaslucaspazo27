@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estadísticas · Copa LucasPazo27</title>
+<meta name="description" content="Buscá tu nick de HaxBall y mirá tus estadísticas en la Copa LucasPazo27.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0C0F; --bg2:#12161B; --card:#15191F; --line:#282E36;
+    --ink:#EDE8DC; --muted:#9C968A;
+    --a1:#FF2E9A; --a1b:#FF7EDB; --a2:#00E5FF; --gold:#FFD60A;
+    --win:#39FF14; --draw:#FFD60A; --lose:#FF3366;
+    --a1-rgb:255,46,154; --a2-rgb:0,229,255;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;min-height:100%}
+  body{
+    min-height:100vh; min-height:100dvh;
+    background:
+      radial-gradient(700px 420px at 10% 0%, rgba(var(--a1-rgb),.16), transparent 60%),
+      radial-gradient(600px 400px at 92% 6%, rgba(var(--a2-rgb),.12), transparent 60%),
+      var(--bg);
+    color:var(--ink); font-family:'IBM Plex Sans',sans-serif; line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 80px}
+  a{color:inherit}
+  .back{display:inline-flex;align-items:center;gap:6px;margin:18px 0 0;font-size:14px;color:var(--muted);text-decoration:none}
+  .back:hover{color:var(--a2)}
+  header{text-align:center;padding:22px 0 18px}
+  .kicker{font-family:'Bebas Neue',sans-serif;letter-spacing:.18em;font-size:18px;color:var(--a2)}
+  h1{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:clamp(40px,9vw,64px);line-height:1;margin:2px 0 6px;letter-spacing:.02em}
+  h1 span{color:var(--a1)}
+  .sub{color:var(--muted);font-size:15px;margin:0}
+
+  /* buscador */
+  .search{position:relative;margin:18px 0 8px}
+  .search input{
+    width:100%;font:inherit;font-size:19px;padding:16px 48px 16px 50px;color:var(--ink);
+    background:var(--card);border:2px solid var(--line);border-radius:16px;outline:none;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .search input::placeholder{color:#6f6a60}
+  .search input:focus{border-color:var(--a1);box-shadow:0 0 0 4px rgba(var(--a1-rgb),.18)}
+  .search .ic{position:absolute;left:17px;top:50%;transform:translateY(-50%);font-size:20px;pointer-events:none}
+  .search .clr{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:0;border-radius:50%;
+    background:var(--bg2);color:var(--muted);font-size:16px;cursor:pointer;display:none}
+  .search.has .clr{display:block}
+  .sug{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:20;background:var(--card);border:1px solid var(--line);
+    border-radius:14px;overflow:hidden;box-shadow:0 14px 34px rgba(0,0,0,.55);display:none}
+  .sug.on{display:block}
+  .sug button{display:flex;width:100%;align-items:center;gap:10px;padding:13px 16px;border:0;background:none;color:var(--ink);
+    font:inherit;font-size:17px;text-align:left;cursor:pointer;border-bottom:1px solid var(--line)}
+  .sug button:last-child{border-bottom:0}
+  .sug button:hover,.sug button.sel{background:rgba(var(--a1-rgb),.14)}
+  .sug .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sug .p{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--muted)}
+  .sug .none{padding:14px 16px;color:var(--muted)}
+  .status{min-height:20px;font-size:13px;color:var(--muted);text-align:center;margin:6px 0 0}
+  .status.err{color:var(--lose)}
+
+  /* ficha */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px 18px;margin-top:18px;
+    box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .pname{font-family:'Bebas Neue',sans-serif;font-size:clamp(36px,8vw,54px);line-height:1.05;margin:0;word-break:break-word}
+  .badges{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
+  .badge{font-size:14px;font-weight:600;padding:5px 12px;border-radius:999px;background:var(--bg2);border:1px solid var(--line)}
+  .badge.pts{background:rgba(var(--a1-rgb),.16);border-color:rgba(var(--a1-rgb),.5);color:var(--a1b)}
+  .badge.pos{background:rgba(var(--a2-rgb),.12);border-color:rgba(var(--a2-rgb),.45);color:var(--a2)}
+  .actions{display:flex;gap:8px;margin-top:12px}
+  .btn{font:inherit;font-size:14px;font-weight:600;padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg2);color:var(--ink);cursor:pointer}
+  .btn:hover{border-color:var(--a2);color:var(--a2)}
+
+  .sec{font-family:'Bebas Neue',sans-serif;letter-spacing:.08em;font-size:22px;color:var(--a2);margin:22px 0 8px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  @media(min-width:560px){.grid{grid-template-columns:repeat(3,1fr)}}
+  .tile{position:relative;background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:14px 12px 12px;text-align:center}
+  .tile .e{font-size:22px;line-height:1}
+  .tile .v{display:block;font-family:'Bebas Neue',sans-serif;font-size:44px;line-height:1.05;margin-top:4px}
+  .tile .l{display:block;font-size:14px;color:var(--muted)}
+  .tile .r{display:inline-block;margin-top:6px;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(var(--a2-rgb),.14);color:var(--a2)}
+  .tile .r.top3{background:rgba(255,214,10,.16);color:var(--gold)}
+  .tile.big .v{color:var(--a1b)}
+
+  /* resultados */
+  .wdl{display:flex;height:16px;border-radius:999px;overflow:hidden;background:var(--bg2);border:1px solid var(--line)}
+  .wdl i{display:block;height:100%}
+  .wdl .w{background:var(--win)} .wdl .d{background:var(--draw)} .wdl .l{background:var(--lose)}
+  .wdlk{display:flex;justify-content:space-between;gap:6px;margin-top:8px;font-size:15px;flex-wrap:wrap}
+  .wdlk b{font-family:'IBM Plex Mono',monospace}
+  .wdlk .w b{color:var(--win)} .wdlk .d b{color:var(--draw)} .wdlk .l b{color:var(--lose)}
+
+  /* inicio */
+  .top{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+  .top button{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--line);
+    background:var(--card);color:var(--ink);font:inherit;font-size:17px;text-align:left;cursor:pointer}
+  .top button:hover{border-color:var(--a1);background:rgba(var(--a1-rgb),.08)}
+  .top .pos{font-family:'Bebas Neue',sans-serif;font-size:26px;width:34px;color:var(--a2);text-align:center}
+  .top li:nth-child(-n+3) .pos{color:var(--gold)}
+  .top .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .top .pt{font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--a1b)}
+  .hint{color:var(--muted);text-align:center;margin:26px 0 6px;font-size:15px}
+  .credit{text-align:center;color:var(--muted);font-size:13px;margin-top:34px}
+  .credit b{color:var(--ink)}
+  .sk{height:160px;border-radius:20px;background:linear-gradient(90deg,var(--card),var(--bg2),var(--card));background-size:200% 100%;animation:sk 1.2s linear infinite;margin-top:18px}
+  @keyframes sk{to{background-position:-200% 0}}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="./">← Volver a la Copa</a>
+  <header>
+    <div class="kicker">COPA LUCASPAZO27</div>
+    <h1>Mis <span>estadísticas</span></h1>
+    <p class="sub">Escribí tu nick de HaxBall (o el de cualquier jugador) y mirá cómo viene.</p>
+  </header>
+
+  <div class="search" id="search">
+    <span class="ic" aria-hidden="true">🔎</span>
+    <input id="q" type="text" placeholder="Buscar jugador…" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Buscar jugador" disabled>
+    <button class="clr" id="clr" type="button" aria-label="Borrar">✕</button>
+    <div class="sug" id="sug" role="listbox"></div>
+  </div>
+  <div class="status" id="status">Cargando jugadores…</div>
+
+  <div id="skel" class="sk"></div>
+  <div id="profile" hidden></div>
+  <div id="home" hidden>
+    <div class="hint">O tocá a uno de los mejores:</div>
+    <div class="sec">🏆 TOP 10 POR PUNTAJE</div>
+    <ul class="top" id="top"></ul>
+  </div>
+  <div class="credit">Estadísticas creadas por <b>SrNixx</b></div>
+</div>
+
+<script>
+(function(){
+  var SHEET_ID = '1jU0kDqb4T1KmYEPZADP34Yv3SKMDWgwl';
+  var STATS_GID = '202140857';   // hoja con las estadísticas de cada jugador
+  var TOP_GID = '350989282';     // hoja del ranking por puntaje (Top, Dorsal, Jugador, Posición, Puntaje Total)
+  var REFRESH_MS = 60000;
+
+  var $ = function(id){ return document.getElementById(id); };
+  var qEl = $('q'), sugEl = $('sug'), statusEl = $('status'), profEl = $('profile'), homeEl = $('home'), topEl = $('top'), skel = $('skel'), searchEl = $('search');
+
+  function norm(s){
+    s = (s || '').toString().trim().toLowerCase();
+    try{ s = s.normalize('NFD').replace(/[̀-ͯ]/g, ''); }catch(e){}
+    return s.replace(/\s+/g, ' ');
+  }
+  function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function num(v){ var n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isNaN(n) ? null : n; }
+
+  function parseCSV(text){
+    var rows = [], row = [], cell = '', q = false, i, c;
+    for(i = 0; i < text.length; i++){
+      c = text[i];
+      if(q){
+        if(c === '"'){ if(text[i+1] === '"'){ cell += '"'; i++; } else q = false; }
+        else cell += c;
+      } else if(c === '"'){ q = true; }
+      else if(c === ','){ row.push(cell); cell = ''; }
+      else if(c === '\n' || c === '\r'){
+        if(c === '\r' && text[i+1] === '\n') i++;
+        row.push(cell); rows.push(row); row = []; cell = '';
+      } else cell += c;
+    }
+    if(cell !== '' || row.length){ row.push(cell); rows.push(row); }
+    return rows;
+  }
+
+  function sheetUrls(gid){
+    var t = Date.now(), base = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID;
+    return [
+      base + '/gviz/tq?tqx=out:csv&gid=' + gid + '&headers=1&_=' + t,
+      base + '/export?format=csv&gid=' + gid + '&_=' + t,
+      base + '/gviz/tq?tqx=out:csv&gid=' + gid + '&headers=0&_=' + t
+    ];
+  }
+  function fetchSheet(gid, parser){
+    var list = sheetUrls(gid), idx = 0;
+    function next(){
+      if(idx >= list.length) return Promise.reject(new Error('sin-acceso'));
+      return fetch(list[idx++], { cache: 'no-store' }).then(function(r){
+        if(!r.ok) throw new Error('http-' + r.status);
+        return r.text();
+      }).then(function(txt){
+        if(/^\s*<(!doctype|html)/i.test(txt)) throw new Error('html');
+        var res = parser(parseCSV(txt));
+        if(!res || !Object.keys(res.map).length) throw new Error('sin-datos');
+        return res;
+      }).catch(next);
+    }
+    return next();
+  }
+
+  /* ---------- Hoja de estadísticas: columnas reconocidas por el texto del encabezado ---------- */
+  var FIELDS = [
+    { k:'played',  re:/^partidos jugados$|^jugados$/ },
+    { k:'won',     re:/ganad/ },
+    { k:'drawn',   re:/empatad/ },
+    { k:'lost',    re:/perdid/ },
+    { k:'goals',   re:/^goles$/ },
+    { k:'assists', re:/^asistencias$/ },
+    { k:'ownGoals',re:/autogol/ },
+    { k:'mvp',     re:/^mvp( del)? partido|^mvp$|^mvps$|^mvp partido/ },
+    { k:'mvpT',    re:/mvp.*torneo/ },
+    { k:'titles',  re:/titulo|campeon/ },
+    { k:'yellow',  re:/amarilla/ },
+    { k:'red',     re:/^rojas?$|tarjetas? rojas?/ },
+    { k:'left',    re:/abandon/ }
+  ];
+  function parseStats(rows){
+    var h = -1, cols = {}, cJ = -1, i, k, r;
+    for(i = 0; i < Math.min(rows.length, 10) && h < 0; i++){
+      var cells = (rows[i] || []).map(norm);
+      var j = cells.indexOf('jugador');
+      if(j >= 0 && cells.indexOf('goles') >= 0){
+        h = i; cJ = j;
+        cells.forEach(function(c, idx){
+          if(!c || /^prom/.test(c) || /\+/.test(c)) return;
+          FIELDS.forEach(function(f){ if(cols[f.k] === undefined && f.re.test(c)) cols[f.k] = idx; });
+        });
+      }
+    }
+    if(h < 0){ /* disposición conocida de la hoja: C = Jugador · E = Partidos · I = Goles · K = Asistencias */
+      cJ = 2; cols = { played:4, goals:8, assists:10 };
+    }
+    var map = {}, list = [];
+    for(k = h + 1; k < rows.length; k++){
+      r = rows[k] || [];
+      var name = (r[cJ] || '').trim();
+      if(!name || norm(name) === 'jugador') continue;
+      var o = { name: name };
+      var any = false;
+      Object.keys(cols).forEach(function(key){ var n = num(r[cols[key]]); o[key] = n; if(n !== null) any = true; });
+      if(h < 0 && !any) continue;
+      map[norm(name)] = o; list.push(o);
+    }
+    return { map: map, list: list, cols: cols };
+  }
+  /* ---------- Hoja de puntaje: Top, Dorsal, Jugador, Posición, Puntaje Total ---------- */
+  function parseTop(rows){
+    var map = {}, list = [], i, h = -1, c = { top:0, dorsal:1, name:2, pos:3, pts:4 };
+    for(i = 0; i < Math.min(rows.length, 10) && h < 0; i++){
+      var cells = (rows[i] || []).map(norm);
+      if(cells.indexOf('jugador') >= 0 && cells.some(function(x){ return /puntaje/.test(x); })){
+        h = i; c.name = cells.indexOf('jugador');
+        c.top = cells.indexOf('top'); c.dorsal = cells.indexOf('dorsal');
+        c.pos = cells.findIndex(function(x){ return /^posicion/.test(x); });
+        c.pts = cells.findIndex(function(x){ return /puntaje/.test(x); });
+      }
+    }
+    for(i = h + 1; i < rows.length; i++){
+      var r = rows[i] || [], name = (r[c.name] || '').trim();
+      if(!name) continue;
+      var o = { name: name, top: c.top >= 0 ? num(r[c.top]) : null, dorsal: c.dorsal >= 0 ? (r[c.dorsal] || '').trim() : '',
+                pos: c.pos >= 0 ? (r[c.pos] || '').trim() : '', pts: c.pts >= 0 ? num(r[c.pts]) : null };
+      map[norm(name)] = o; list.push(o);
+    }
+    return { map: map, list: list };
+  }
+
+  var stats = null, top = null, ranks = {}, current = null;
+
+  /* puesto de cada jugador en cada estadística (empates comparten puesto; solo cuentan valores > 0) */
+  function buildRanks(){
+    ranks = {};
+    if(!stats) return;
+    Object.keys(stats.cols).forEach(function(k){
+      var vals = stats.list.map(function(p){ return p[k]; }).filter(function(v){ return v !== null && v !== undefined && v > 0; });
+      vals.sort(function(a, b){ return b - a; });
+      ranks[k] = vals;
+    });
+  }
+  function rankOf(k, v){
+    if(!ranks[k] || v === null || v === undefined || v <= 0) return null;
+    var n = 0; for(var i = 0; i < ranks[k].length; i++){ if(ranks[k][i] > v) n++; else break; }
+    return n + 1;
+  }
+
+  /* ---------- Buscador ---------- */
+  function allNames(){
+    var seen = {}, out = [];
+    function add(n, pts){ var k = norm(n); if(!k || seen[k]) return; seen[k] = 1; out.push({ name: n, key: k, pts: pts }); }
+    if(top) top.list.forEach(function(p){ add(p.name, p.pts); });
+    if(stats) stats.list.forEach(function(p){ add(p.name, top && top.map[norm(p.name)] ? top.map[norm(p.name)].pts : null); });
+    return out;
+  }
+  var sel = -1, shown = [];
+  function suggest(){
+    var q = norm(qEl.value);
+    searchEl.classList.toggle('has', !!qEl.value);
+    if(!q){ sugEl.classList.remove('on'); shown = []; return; }
+    var all = allNames(), a = [], b = [];
+    all.forEach(function(p){
+      if(p.key.indexOf(q) === 0) a.push(p); else if(p.key.indexOf(q) > -1) b.push(p);
+    });
+    shown = a.concat(b).slice(0, 8); sel = shown.length ? 0 : -1;
+    if(!shown.length){ sugEl.innerHTML = '<div class="none">No encontré a nadie con ese nombre.</div>'; }
+    else sugEl.innerHTML = shown.map(function(p, i){
+      return '<button type="button" role="option" data-i="' + i + '"' + (i === 0 ? ' class="sel"' : '') + '><span class="n">' + esc(p.name) + '</span>' +
+        (p.pts !== null && p.pts !== undefined ? '<span class="p">' + p.pts + ' pts</span>' : '') + '</button>';
+    }).join('');
+    sugEl.classList.add('on');
+  }
+  function move(d){
+    if(!shown.length) return;
+    sel = (sel + d + shown.length) % shown.length;
+    Array.prototype.forEach.call(sugEl.children, function(el, i){ el.classList.toggle('sel', i === sel); });
+  }
+  qEl.addEventListener('input', suggest);
+  qEl.addEventListener('focus', suggest);
+  qEl.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowDown'){ e.preventDefault(); move(1); }
+    else if(e.key === 'ArrowUp'){ e.preventDefault(); move(-1); }
+    else if(e.key === 'Enter'){ e.preventDefault(); if(shown[sel]) pick(shown[sel].name); }
+    else if(e.key === 'Escape'){ sugEl.classList.remove('on'); }
+  });
+  sugEl.addEventListener('mousedown', function(e){
+    var b = e.target.closest('button'); if(!b) return; e.preventDefault(); pick(shown[+b.getAttribute('data-i')].name);
+  });
+  document.addEventListener('click', function(e){ if(!searchEl.contains(e.target)) sugEl.classList.remove('on'); });
+  $('clr').addEventListener('click', function(){ qEl.value = ''; suggest(); current = null; show(); try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){} qEl.focus(); });
+
+  function pick(name){
+    qEl.value = name; sugEl.classList.remove('on'); searchEl.classList.add('has'); qEl.blur();
+    current = name; show();
+    try{ history.replaceState(null, '', '#j=' + encodeURIComponent(name)); }catch(e){}
+    try{ window.scrollTo({ top: 0, behavior: 'smooth' }); }catch(e){}
+  }
+
+  /* ---------- Ficha del jugador ---------- */
+  var TILES = [
+    { k:'goals',    e:'⚽', l:'Goles',        big:true },
+    { k:'assists',  e:'🎯', l:'Asistencias',  big:true },
+    { k:'played',   e:'🎮', l:'Partidos jugados', big:true },
+    { k:'mvp',      e:'⭐', l:'MVP del partido' },
+    { k:'mvpT',     e:'🏆', l:'MVP del torneo' },
+    { k:'titles',   e:'🏅', l:'Títulos' },
+    { k:'ownGoals', e:'🙈', l:'Autogoles', noRank:true },
+    { k:'yellow',   e:'🟨', l:'Amarillas', noRank:true },
+    { k:'red',      e:'🟥', l:'Rojas', noRank:true },
+    { k:'left',     e:'🚪', l:'Abandonos', noRank:true }
+  ];
+  function fmt(n){ return n === null || n === undefined ? '–' : (Math.round(n * 100) / 100).toString().replace('.', ','); }
+
+  function profileHTML(name){
+    var key = norm(name), st = stats && stats.map[key], tp = top && top.map[key];
+    var shownName = (st && st.name) || (tp && tp.name) || name;
+    var h = '<div class="card"><h2 class="pname">' + esc(shownName) + '</h2><div class="badges">';
+    if(tp && tp.top) h += '<span class="badge">#' + tp.top + ' en el ranking</span>';
+    if(tp && tp.pts !== null) h += '<span class="badge pts">' + tp.pts + ' pts</span>';
+    if(tp && tp.pos) h += '<span class="badge pos">' + esc(tp.pos) + '</span>';
+    if(tp && tp.dorsal !== '') h += '<span class="badge">Dorsal ' + esc(tp.dorsal) + '</span>';
+    h += '</div><div class="actions"><button class="btn" id="share" type="button">🔗 Copiar link</button></div>';
+    if(!st){
+      h += '<p class="sub" style="margin-top:18px">' + (tp ? 'Este jugador está en el ranking pero todavía no tiene estadísticas cargadas.' : 'No encontré a este jugador.') + '</p></div>';
+      return h;
+    }
+    /* resultados */
+    var W = st.won, D = st.drawn, L = st.lost, P = st.played;
+    if(W !== undefined && D !== undefined && L !== undefined && (W + D + L) > 0){
+      var tot = W + D + L;
+      h += '<div class="sec">RESULTADOS</div><div class="wdl"><i class="w" style="width:' + (W / tot * 100) + '%"></i><i class="d" style="width:' + (D / tot * 100) + '%"></i><i class="l" style="width:' + (L / tot * 100) + '%"></i></div>' +
+        '<div class="wdlk"><span class="w">✅ Ganados <b>' + fmt(W) + '</b></span><span class="d">🤝 Empatados <b>' + fmt(D) + '</b></span><span class="l">❌ Perdidos <b>' + fmt(L) + '</b></span></div>' +
+        '<div class="wdlk" style="margin-top:6px"><span>Efectividad de victorias: <b>' + Math.round(W / tot * 100) + '%</b></span></div>';
+    }
+    /* números */
+    var tiles = '';
+    TILES.forEach(function(t){
+      var v = st[t.k]; if(v === undefined) return;          // esa columna no existe en la hoja
+      if(v === null && t.noRank !== undefined) v = 0;
+      var r = t.noRank ? null : rankOf(t.k, v);
+      tiles += '<div class="tile' + (t.big ? ' big' : '') + '"><span class="e">' + t.e + '</span><span class="v">' + fmt(v) + '</span><span class="l">' + t.l + '</span>' +
+        (r ? '<span class="r' + (r <= 3 ? ' top3' : '') + '">#' + r + ' del torneo</span>' : '') + '</div>';
+    });
+    if(tiles) h += '<div class="sec">NÚMEROS</div><div class="grid">' + tiles + '</div>';
+    /* promedios */
+    var g = st.goals, a = st.assists, avg = '';
+    if(g !== undefined && a !== undefined && g !== null && a !== null){
+      var ga = g + a, rga = (function(){ var arr = stats.list.map(function(p){ return (p.goals || 0) + (p.assists || 0); }).filter(function(v){ return v > 0; }).sort(function(x, y){ return y - x; }), n = 0; for(var i = 0; i < arr.length; i++){ if(arr[i] > ga) n++; else break; } return ga > 0 ? n + 1 : null; })();
+      avg += '<div class="tile"><span class="e">⚡</span><span class="v">' + fmt(ga) + '</span><span class="l">Goles + asistencias</span>' + (rga ? '<span class="r' + (rga <= 3 ? ' top3' : '') + '">#' + rga + ' del torneo</span>' : '') + '</div>';
+      if(P){
+        avg += '<div class="tile"><span class="e">📊</span><span class="v">' + fmt(g / P) + '</span><span class="l">Goles por partido</span></div>' +
+               '<div class="tile"><span class="e">📊</span><span class="v">' + fmt(a / P) + '</span><span class="l">Asistencias por partido</span></div>';
+      }
+    }
+    if(avg) h += '<div class="sec">PROMEDIOS</div><div class="grid">' + avg + '</div>';
+    return h + '</div>';
+  }
+
+  function show(){
+    skel.hidden = true;
+    if(current){
+      homeEl.hidden = true; profEl.hidden = false; profEl.innerHTML = profileHTML(current);
+      var sb = $('share'); if(sb) sb.addEventListener('click', function(){
+        var url = location.origin + location.pathname + '#j=' + encodeURIComponent(current);
+        function ok(){ sb.textContent = '✅ Link copiado'; setTimeout(function(){ sb.textContent = '🔗 Copiar link'; }, 1800); }
+        try{ navigator.clipboard.writeText(url).then(ok, function(){ window.prompt('Copiá el link:', url); }); }catch(e){ window.prompt('Copiá el link:', url); }
+      });
+    } else {
+      profEl.hidden = true; profEl.innerHTML = '';
+      var l = top ? top.list.slice().sort(function(x, y){ return (y.pts || 0) - (x.pts || 0); }).slice(0, 10) : [];
+      topEl.innerHTML = l.map(function(p, i){
+        return '<li><button type="button" data-n="' + esc(p.name) + '"><span class="pos">' + (i + 1) + '</span><span class="nm">' + esc(p.name) + '</span><span class="pt">' + (p.pts !== null ? p.pts + ' pts' : '') + '</span></button></li>';
+      }).join('');
+      homeEl.hidden = !l.length;
+    }
+  }
+  topEl.addEventListener('click', function(e){ var b = e.target.closest('button'); if(b) pick(b.getAttribute('data-n')); });
+
+  function fromHash(){
+    var m = /[#&]j=([^&]*)/.exec(location.hash);
+    if(m){ try{ current = decodeURIComponent(m[1]); qEl.value = current; searchEl.classList.add('has'); }catch(e){} }
+  }
+  window.addEventListener('hashchange', function(){ fromHash(); show(); });
+
+  /* ---------- Carga de datos ---------- */
+  function load(first){
+    var pS = fetchSheet(STATS_GID, parseStats).then(function(r){ return r; }, function(){ return null; });
+    var pT = fetchSheet(TOP_GID, parseTop).then(function(r){ return r; }, function(){ return null; });
+    Promise.all([pS, pT]).then(function(res){
+      if(res[0]) stats = res[0];
+      if(res[1]) top = res[1];
+      if(!stats && !top){
+        if(first){ statusEl.textContent = 'No pude leer las estadísticas ahora. Probá de nuevo en un rato.'; statusEl.className = 'status err'; skel.hidden = true; }
+        return;
+      }
+      buildRanks();
+      var n = allNames().length;
+      statusEl.className = 'status';
+      statusEl.textContent = n + ' jugadores · se actualiza solo';
+      qEl.disabled = false;
+      if(first){ fromHash(); }
+      show();
+      if(first && !qEl.value) { try{ if(window.innerWidth > 700) qEl.focus(); }catch(e){} }
+    });
+  }
+  load(true);
+  setInterval(function(){ if(!document.hidden) load(false); }, REFRESH_MS);
+})();
+</script>
+</body>
+</html>
