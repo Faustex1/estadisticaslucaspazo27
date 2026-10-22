@@ -332,6 +332,7 @@
     return next();
   }
   var FIELDS = [
+    { k:'pts',     re:/^puntaje( total)?$/ },
     { k:'played',  re:/^partidos jugados$|^jugados$/ },
     { k:'won',     re:/ganad/ },
     { k:'drawn',   re:/empatad/ },
@@ -347,12 +348,12 @@
     { k:'left',    re:/abandon/ }
   ];
   function parseStats(rows){
-    var h = -1, cols = {}, cJ = -1, i, k, r;
+    var h = -1, cols = {}, cJ = -1, cD = -1, cPo = -1, i, k, r;
     for(i = 0; i < Math.min(rows.length, 10) && h < 0; i++){
       var cells = (rows[i] || []).map(norm);
       var j = cells.indexOf('jugador');
       if(j >= 0 && cells.indexOf('goles') >= 0){
-        h = i; cJ = j;
+        h = i; cJ = j; cD = cells.indexOf('dorsal'); cPo = cells.findIndex(function(x){ return /^posicion/.test(x); });
         cells.forEach(function(c, idx){
           if(!c || /^prom/.test(c) || /\+/.test(c)) return;
           FIELDS.forEach(function(f){ if(cols[f.k] === undefined && f.re.test(c)) cols[f.k] = idx; });
@@ -365,7 +366,7 @@
       r = rows[k] || [];
       var name = (r[cJ] || '').trim();
       if(!name || norm(name) === 'jugador') continue;
-      var o = { name: name }, any = false;
+      var o = { name: name, dorsal: cD >= 0 ? (r[cD] || '').trim() : '', pos: cPo >= 0 ? (r[cPo] || '').trim() : '' }, any = false;
       Object.keys(cols).forEach(function(key){ var n = num(r[cols[key]]); o[key] = n; if(n !== null) any = true; });
       if(h < 0 && !any) continue;
       list.push(o);
@@ -433,6 +434,8 @@
     if(stats) stats.list.forEach(function(s){
       var p = get(s.name); p.name = s.name;
       Object.keys(stats.cols).forEach(function(k){ p[k] = s[k]; });
+      if(!p.pos && s.pos) p.pos = s.pos;
+      if((p.dorsal === undefined || p.dorsal === '') && s.dorsal) p.dorsal = s.dorsal;
     });
     P.forEach(function(p){
       var pj = p.played;
@@ -627,7 +630,7 @@
       else if(aq >= 0.75 && gq < 0.6) chips = '<span class="chip c2">🪄 Perfil asistidor</span>' + chips;
     }
     if(chips) h += '<div class="chips">' + chips + '</div>';
-    h += '<div class="actions"><button class="btn pri" data-act="cmp">⚔️ Comparar con otro jugador</button><button class="btn" data-act="share">🔗 Copiar link</button></div></div>';
+    h += '<div class="actions"><button class="btn pri" data-act="cmp">⚔️ Comparar con otro jugador</button><button class="btn" data-act="share">🔗 Copiar link</button><button class="btn" data-act="card">📸 Descargar mi carta</button></div></div>';
 
     if(!hasStats || !has('goals')){
       return h + '<div class="card fade"><p class="muted" style="margin:0">Este jugador está en el ranking pero todavía no tiene estadísticas cargadas.</p></div>';
@@ -675,6 +678,74 @@
       }).join('') + '</div></div>';
     }
     return h;
+  }
+
+
+  /* ================= CARTA PARA COMPARTIR (imagen PNG) ================= */
+  function rr(c, x, y, w, h, r){ c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+  function fitText(c, t, maxW, size, font){ var s = size; c.font = s + 'px ' + font; while(c.measureText(t).width > maxW && s > 36){ s -= 4; c.font = s + 'px ' + font; } return s; }
+  function drawCard(p){
+    var W = 1080, H = 1350, cv = document.createElement('canvas'); cv.width = W; cv.height = H; var c = cv.getContext('2d');
+    var BEB = "'Bebas Neue', Impact, 'Arial Narrow', sans-serif", PLEX = "'IBM Plex Sans', Arial, sans-serif";
+    var g = c.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#1a0b17'); g.addColorStop(.5, '#0A0C0F'); g.addColorStop(1, '#06161a'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+    var r1 = c.createRadialGradient(150, 100, 20, 150, 100, 620); r1.addColorStop(0, 'rgba(255,46,154,.35)'); r1.addColorStop(1, 'rgba(255,46,154,0)'); c.fillStyle = r1; c.fillRect(0, 0, W, H);
+    var r2 = c.createRadialGradient(960, 1250, 20, 960, 1250, 650); r2.addColorStop(0, 'rgba(0,229,255,.28)'); r2.addColorStop(1, 'rgba(0,229,255,0)'); c.fillStyle = r2; c.fillRect(0, 0, W, H);
+    // marco
+    rr(c, 40, 40, W - 80, H - 80, 44); var bg = c.createLinearGradient(0, 0, W, 0); bg.addColorStop(0, '#FFD60A'); bg.addColorStop(.5, '#FF2E9A'); bg.addColorStop(1, '#00E5FF'); c.lineWidth = 6; c.strokeStyle = bg; c.stroke();
+    c.textAlign = 'center'; c.fillStyle = '#00E5FF'; c.font = '44px ' + BEB; if(c.letterSpacing !== undefined) c.letterSpacing = '8px'; c.fillText('COPA LUCASPAZO27', W / 2, 118); if(c.letterSpacing !== undefined) c.letterSpacing = '0px';
+    // valoración
+    var rt = rating(p);
+    if(rt !== null){
+      c.fillStyle = '#FFD60A'; c.shadowColor = 'rgba(255,214,10,.5)'; c.shadowBlur = 40; c.font = '250px ' + BEB; c.fillText(String(rt), W / 2, 360); c.shadowBlur = 0;
+      c.fillStyle = '#00E5FF'; c.font = '60px ' + BEB; c.fillText((p.pos || 'JUGADOR').toUpperCase() + (p.dorsal !== undefined && p.dorsal !== '' ? '  ·  DORSAL ' + p.dorsal : ''), W / 2, 430);
+    }
+    // nombre
+    c.fillStyle = '#fff'; var nm = p.name.toUpperCase(), fs = fitText(c, nm, W - 160, 124, BEB); c.fillText(nm, W / 2, rt !== null ? 560 : 360);
+    c.fillStyle = '#9C968A'; c.font = '34px ' + PLEX;
+    var sub = []; if(p.top) sub.push('#' + p.top + ' en el ranking'); if(p.pts !== null && p.pts !== undefined) sub.push(p.pts + ' pts');
+    c.fillText(sub.join('   ·   '), W / 2, rt !== null ? 614 : 414);
+    // números
+    var items = [['goals', 'GOLES'], ['assists', 'ASISTENCIAS'], ['played', 'PARTIDOS'], ['winPct', 'VICTORIAS'], ['mvp', 'MVP'], ['titles', 'TÍTULOS']].filter(function(x){ return has(x[0]); });
+    var y0 = 680, cw = (W - 160 - 40) / 3, ch = 190;
+    items.slice(0, 6).forEach(function(it, i){
+      var m = M[it[0]], cx = 80 + (i % 3) * (cw + 20), cy = y0 + Math.floor(i / 3) * (ch + 20);
+      rr(c, cx, cy, cw, ch, 26); c.fillStyle = 'rgba(255,255,255,.06)'; c.fill(); c.lineWidth = 2; c.strokeStyle = 'rgba(255,255,255,.14)'; c.stroke();
+      var v = val(m, p); if(m.min && !(p.played >= MIN_PJ)) v = null; if(v === null && (m.k === 'mvp' || m.k === 'titles')) v = 0;
+      c.fillStyle = i < 3 ? '#FF7EDB' : '#fff'; c.font = '104px ' + BEB; c.fillText(show(m, v), cx + cw / 2, cy + 112);
+      c.fillStyle = '#9C968A'; c.font = '28px ' + PLEX; c.fillText(it[1], cx + cw / 2, cy + 160);
+    });
+    // radar chico
+    var axes = radarAxes();
+    if(axes.length >= 3){
+      var cx0 = W / 2, cy0 = 1180, R = 76;
+      function pt(i, f){ var a = -Math.PI / 2 + i * 2 * Math.PI / axes.length; return [cx0 + Math.cos(a) * R * f, cy0 + Math.sin(a) * R * f]; }
+      c.lineWidth = 1.5; c.strokeStyle = 'rgba(255,255,255,.18)';
+      [.5, 1].forEach(function(f){ c.beginPath(); axes.forEach(function(_, i){ var q = pt(i, f); i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1]); }); c.closePath(); c.stroke(); });
+      c.beginPath(); axes.forEach(function(k, i){ var q = pct(M[k], p); q = q === null ? 0 : q; var z = pt(i, Math.max(.05, q)); i ? c.lineTo(z[0], z[1]) : c.moveTo(z[0], z[1]); }); c.closePath();
+      c.fillStyle = 'rgba(255,46,154,.3)'; c.fill(); c.lineWidth = 5; c.strokeStyle = '#FF2E9A'; c.stroke();
+    }
+    c.fillStyle = '#9C968A'; c.font = '28px ' + PLEX; var site = /^https?:/.test(location.protocol) ? location.host + location.pathname : 'ligahaxballucas2.vercel.app/estadisticas.html';
+    c.fillText('Mirá tus estadísticas en ' + site.replace(/\/$/, ''), W / 2, H - 62);
+    return cv;
+  }
+  function makeCard(btn){
+    var p = byKey[S.cur]; if(!p) return;
+    var old = btn.textContent; btn.textContent = '⏳ Generando…'; btn.disabled = true;
+    function done(msg){ btn.textContent = msg || old; btn.disabled = false; if(msg) setTimeout(function(){ btn.textContent = old; }, 2200); }
+    var load = (document.fonts && document.fonts.load) ? Promise.all([document.fonts.load("120px 'Bebas Neue'"), document.fonts.load("30px 'IBM Plex Sans'")]).catch(function(){}) : Promise.resolve();
+    load.then(function(){
+      var cv = drawCard(p), fname = 'carta-' + (p.key.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'jugador') + '.png';
+      cv.toBlob(function(blob){
+        if(!blob){ done('No se pudo generar'); return; }
+        var file = null; try{ file = new File([blob], fname, { type: 'image/png' }); }catch(e){}
+        if(file && navigator.canShare && navigator.canShare({ files: [file] }) && /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)){
+          navigator.share({ files: [file], title: 'Mi carta · Copa LucasPazo27' }).then(function(){ done('✅ Listo'); }, function(){ done(); });
+          return;
+        }
+        var url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 4000); done('✅ Carta descargada');
+      }, 'image/png');
+    });
   }
 
   /* ================= VISTA: SIN JUGADOR (inicio) ================= */
@@ -831,7 +902,12 @@
   function render(reset){
     skel.hidden = true;
     var cur = S.cur ? byKey[S.cur] : null;
-    if(S.cur && !cur){ S.cur = null; }
+    if(S.cur && !cur){
+      var q0 = S.cur, hit = null;
+      for(var ii = 0; ii < P.length && !hit; ii++){ if(P[ii].key.indexOf(q0) === 0) hit = P[ii]; }
+      for(var jj = 0; jj < P.length && !hit; jj++){ if(P[jj].key.indexOf(q0) > -1) hit = P[jj]; }
+      if(hit){ S.cur = hit.key; cur = hit; qEl.value = hit.name; searchEl.classList.add('has'); pushHash(); } else { S.cur = null; }
+    }
     if(S.cmp && !byKey[S.cmp]) S.cmp = null;
     tabsEl.hidden = false;
     var needCur = (S.view === 'perfil' || S.view === 'comparar');
@@ -873,6 +949,7 @@
         try{ navigator.clipboard.writeText(url).then(ok, function(){ window.prompt('Copiá el link:', url); }); }catch(err){ window.prompt('Copiá el link:', url); }
       }
       else if(a === 'all'){ S.all = !S.all; render(false); }
+      else if(a === 'card'){ makeCard(act); }
       return;
     }
     var mc = t.closest('[data-m]'); if(mc){ S.metric = mc.getAttribute('data-m'); S.all = false; render(false); return; }
